@@ -33,9 +33,16 @@ BasicGame.Preloader.prototype = {
 		this.load.image('adsLogo','images/Logo_Munanqui.jpg');
 		this.load.audio('titleMusic', ['audio/portalwin.mp3']);
 		this.load.image('playButton','images/play_start.png');
-		this.load.image('ghost','images/Personaje/pj_stand1.png');
+		this.load.spritesheet('ghost','images/Personaje/sprites/ghost2.png',86.66,142.50);
 		this.load.image('floor','images/Escenario/base_stage.png');
+		this.load.image('floor2','images/Escenario/base_stage2.png');
 		this.load.image('coin','images/Escenario/coin0.png');
+		this.load.image('door1','images/Escenario/door1.png');
+		this.load.image('door2','images/Escenario/doorb1.png');
+		this.load.image('vorticew','images/Escenario/vorticew.png');
+		this.load.image('vorticek','images/Escenario/vorticek.png');
+		this.load.image('gift','images/Escenario/gift.png');
+		this.load.image('overlay','images/overlay.png');
 		//	+ lots of other required assets here
 
 	},

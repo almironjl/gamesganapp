@@ -25,6 +25,7 @@ BasicGame.Game.prototype = {
 
     this.game.stage.backgroundColor = '#2d2d2d';
 		this.game.physics.startSystem(Phaser.Physics.P2JS);
+    this.game.physics.p2.restitution = 0.1;
 		this.spritebg=this.game.add.sprite(0,0,'floor');
     this.spritebg.width=this.game.world.width;
     this.spritebg.height=this.game.world.height;
@@ -32,67 +33,117 @@ BasicGame.Game.prototype = {
     //  Sprite 1 will use the World (global) gravity
     //this.createBall();
     this.cgGhost = this.game.physics.p2.createCollisionGroup();
+    this.cgCoins = this.game.physics.p2.createCollisionGroup();
+    this.cgDoors = this.game.physics.p2.createCollisionGroup();
+    this.isDie=false;
+    this.createDoors();
     this.createCoins();
+    this.vorticek=this.game.add.sprite(-1000,-1000,'vorticek');
+    this.createGhost();
     this.createBorder();
-    //this.createPipes();
+    this.createPauseGame();
+    this.createMenuButtons();
+    this.createTimerGame();
     //this.createStones();
     //this.createBarTop();
-    this.createGhost();
-
-
-
 	},
+  createDoors: function(){
+    let scale=0.65;
+    BasicGame.doorLost=BasicGame.getRandomInt(1,3);
+    this.door1=this.game.add.sprite(this.game.world.centerX-240,170,'door2');
+    this.enablePhysicsDoor(this.door1,1,scale);
+    this.door2=this.game.add.sprite(this.game.world.centerX,170,'door1');
+    this.enablePhysicsDoor(this.door2,2,scale)
+    this.door3=this.game.add.sprite(this.game.world.centerX+210,170,'door2');
+    this.enablePhysicsDoor(this.door3,3,scale);
+  },
+  enablePhysicsDoor(sprite,index,scale){
+    sprite.scale.setTo(scale,scale);
+    sprite.isDoor=true;
+    sprite.indexDoor=index;
+    this.game.physics.p2.enable(sprite);
+    sprite.body.static=true;
+    sprite.body.setCircle(sprite.width/10);
+    sprite.body.setCollisionGroup(this.cgCoins);
+    sprite.body.collides([this.cgGhost]);
+    if(BasicGame.doorLost===index){
+      sprite.isLost=true;
+    }
+  },
   createGhost: function(){
-    this.ghost=this.game.add.sprite(this.game.world.centerX,this.game.world.centerY,'ghost');
-    this.ghost.scale.setTo(0.3,0.3);
+    this.ghost=this.game.add.sprite(BasicGame.startX,BasicGame.startY,'ghost');
+    this.ghost.frame=1;
+    this.ghost.scale.setTo(1.3,1.3);
     this.game.physics.p2.enable(this.ghost);
     this.ghost.body.clearShapes();
+    this.ghost.body.restitution=0;
 		//this.bubble.body.loadPolygon('physdata1', 'donut90-thin');
-    this.ghost.body.setCircle(this.ghost.width/2);
+    this.ghost.body.setCircle(this.ghost.width/12);
 		this.ghost.body.onBeginContact.add(this.ghostCollision, this.ghost);
 		//this.ghost.body.onEndContact.add(this.bubbleCollisionEnd, this);
 		this.ghost.body.fixedRotation = true;
 		this.ghost.myType = 'ghost';
 		this.ghost.isPlayer = true;
+    this.ghost.animations.add('front',[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],10,true);
+    this.ghost.animations.add('left',[15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],10,true);
+    this.ghost.animations.add('right',[30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],10,true);
+    this.ghost.animations.add('left-down',[45,46,47,48,49,50,51,52,53,54,55,56,57,58,59],10,true);
+    this.ghost.animations.add('right-down',[60,61,62,63,64,65,66,67,68,69,70,71,72,73,74],10,true);
+    this.ghost.animations.add('left-up',[75,76,77,78,79,80,81,82,83,84,85,86,87,88,89],10,true);
+    this.ghost.animations.add('right-up',[90,91,92,93,94,95,96,97,98,99,100,101,102,103,104],10,true);
+    this.ghost.animations.add('up',[105,106,107,108,109,110,111,112,113,114,115,116,117,118,119],10,true);
+    this.ghost.animations.add('die',[120,121,122,123,124,125,126,127,128,129,130,131,132,133,134],10,true);
+    this.ghost.body.setCollisionGroup(this.cgGhost);
+    this.ghost.body.collides([this.cgCoins]);
     this.game.input.onDown.add(this.moveSprite, this);
+
     this.finishpoint=new Phaser.Pointer(this.game,1);
+    this.ghost.animations.play(BasicGame.startAnimation);
 
   },
   createBorder: function (){
-    var rectW=10;
+    var rectW=20;
     var width = this.game.world.width;
     var height = this.game.world.height;
     var borderBottom = this.game.add.bitmapData(width, rectW);
     borderBottom.ctx.beginPath();
     borderBottom.ctx.rect(0, 0, width, rectW);
-    borderBottom.ctx.fillStyle = '#ffffff';
-    borderBottom.ctx.fill();
-    var spriteBorderBottom = this.game.add.sprite(this.game.world.centerX, height-(rectW/2), borderBottom);
+    //borderBottom.ctx.fillStyle = '#ffffff';
+    //borderBottom.ctx.fill();
+    var spriteBorderBottom = this.game.add.sprite(this.game.world.centerX, height-(rectW/2)-40, borderBottom);
     spriteBorderBottom.anchor.setTo(0.5, 0.5);
     this.game.physics.p2.enable(spriteBorderBottom,false);
     spriteBorderBottom.body.static=true;
+    spriteBorderBottom.body.setCollisionGroup(this.cgCoins);
+    spriteBorderBottom.body.collides([this.cgGhost]);
     var borderLR = this.game.add.bitmapData(rectW, height);
     borderLR.ctx.beginPath();
     borderLR.ctx.rect(0, 0, rectW, this.game.world.height);
-    borderLR.ctx.fillStyle="#FFFFFF";
-    borderLR.ctx.fill();
-    var spriteBorderLeft = this.game.add.sprite(80, this.game.world.centerY, borderLR);
+    //borderLR.ctx.fillStyle="#FFFFFF";
+    //borderLR.ctx.fill();
+    var spriteBorderLeft = this.game.add.sprite(165, this.game.world.centerY, borderLR);
     spriteBorderLeft.isLeftB=true;
     spriteBorderLeft.anchor.setTo(0.5, 0.5);
     this.game.physics.p2.enable(spriteBorderLeft,false);
     spriteBorderLeft.body.static=true;
     spriteBorderLeft.body.angle=19;
-    var spriteBorderRight = this.game.add.sprite(width-(rectW/2)-80, this.game.world.centerY, borderLR);
+    spriteBorderLeft.body.setCollisionGroup(this.cgCoins);
+    spriteBorderLeft.body.collides([this.cgGhost]);
+    var spriteBorderRight = this.game.add.sprite(width-(rectW/2)-150, this.game.world.centerY, borderLR);
     spriteBorderRight.isRightB=true;
     spriteBorderRight.anchor.setTo(0.5, 0.5);
     this.game.physics.p2.enable(spriteBorderRight,false);
     spriteBorderRight.body.static=true;
     spriteBorderRight.body.angle=-19;
-    var spriteBorderTop = this.game.add.sprite(this.game.world.centerX, 120, borderBottom);
+    spriteBorderRight.body.setCollisionGroup(this.cgCoins);
+    spriteBorderRight.body.collides([this.cgGhost]);
+    var spriteBorderTop = this.game.add.sprite(this.game.world.centerX, 150, borderBottom);
     spriteBorderTop.isTopB=true;
     spriteBorderTop.anchor.setTo(0.5, 0.5);
     this.game.physics.p2.enable(spriteBorderTop,false);
     spriteBorderTop.body.static=true;
+    spriteBorderTop.body.setCollisionGroup(this.cgCoins);
+    spriteBorderTop.body.collides([this.cgGhost]);
 
   },
   createBarTop:function(){
@@ -116,166 +167,195 @@ BasicGame.Game.prototype = {
   },
   createCoins: function(){
     var points=this.getCoinPoints();
+    this.coins=[];
     for(var i=0;i<points.length;i++ ){
-      var coin=this.game.add.sprite(points[i].x,points[i].y,'coin');
+      let coin=this.game.add.sprite(points[i].x+50,points[i].y+50,'gift');
+      coin.scale.setTo(0.2,0.2);
+      //let coinMon=this.game.add.sprite(points[i].x,points[i].y,'coin');
       coin.isCoin=true;
       this.game.physics.p2.enable(coin,false);
+      coin.body.clearShapes();
+  		//this.bubble.body.loadPolygon('physdata1', 'donut90-thin');
+      coin.body.setCircle(coin.width/2);
       coin.body.static=true;
+      coin.body.setCollisionGroup(this.cgCoins);
+      coin.body.collides([this.cgGhost,this.cgCoins]);
+      coin.body.onBeginContact.add(this.contactBox,this);
+      this.coins.push(coin);
+
     }
   },
   getCoinPoints: function(){
-    var points=[
-      new BasicGame.Point(160,250,-30,true),
-      new BasicGame.Point(450,250,15,false),
-      new BasicGame.Point(670,280,-20,true),
-      new BasicGame.Point(190,450,10,false),
-      new BasicGame.Point(495,550,-60,false),
-      new BasicGame.Point(650,450,40,false),
-      new BasicGame.Point(120,650,-10,false),
-      new BasicGame.Point(750,560,15,true),
-      new BasicGame.Point(320,390,10,false)
-    ];
-    return points;
+    return BasicGame.getPointsCoins(1);
+  },
+  contactBox:function(target){
+    //target.sprite.visible=false;
+    //target.sprite.body.destroy();
+    //this.ghost.body.setZeroVelocity();
   },
   ghostCollision: function(objectHit, shapeA, shapeB, equation) {
+    console.log("colllllision");
     if(!objectHit){
       return;
     }
-		if (objectHit.sprite.isLeftB) {
-			this.body.setZeroVelocity();
-		} else if (objectHit.sprite.isRightB) {
-      this.body.setZeroVelocity();
-		} else if (objectHit.sprite.isCoin) {
+		if (objectHit.sprite.isCoin) {
       objectHit.sprite.body.velocity.y=0;
       objectHit.sprite.body.velocity.x=0;
       objectHit.sprite.visible=false;
       objectHit.sprite.body.destroy();
       this.body.setZeroVelocity();
-		} else if (objectHit.sprite.isBoxWin) {
-      console.log("score:"+objectHit.sprite.valueWin);
-			this.body.setZeroVelocity();
-      objectHit.sprite.visible=false;
-      objectHit.sprite.body.destroy();
+      this.body.velocity.y=0;
+      this.body.velocity.x=0;
+      BasicGame.incrementScore(1);
+      return;
 		}
-	},
-  movePlayer: function(velocityIncrease) {
-
-		if (this.paused) return;
-		if (this.popped) return;
-		var clickPoint = new Phaser.Point(this.game.input.activePointer.worldX, this.game.input.activePointer.worldY);
-		var ghostPoint = new Phaser.Point(this.ghost.x, this.ghost.y);
-
-		//console.log(Phaser.Point.angle(clickPoint, bubblePoint));
-		var angleToBubble = Phaser.Point.angle(clickPoint, ghostPoint);
-		var distanceToBubble = Phaser.Point.distance(clickPoint, ghostPoint);
-		//console.log(angleToBubble);
-		//console.log(distanceToBubble);
-		var below = true;
-		if (angleToBubble < 0) {
-			below = false;
-		}
-		var left = true;
-		if (Math.abs(angleToBubble) < 1.57079633) {
-			left = false;
-		}
-		//console.log('below:' + below + '  left:' + left);
-		var maxVelocity = 10;
-		//var velocityIncrease = distanceToBubble;
-		//var velocityIncrease = 10;
-		var angleRatio;
-
-		if (!below) {
-			if (left) {
-				angleRatio = (angleToBubble - 1.57079633) / 1.57079633;
-				this.ghost.body.velocity.y = this.ghost.body.velocity.y - (velocityIncrease * (1 - angleRatio));
-				this.ghost.body.velocity.x = this.ghost.body.velocity.x - (velocityIncrease * angleRatio);
-			} else { //Right
-				angleRatio = angleToBubble / 1.57079633;
-				this.ghost.body.velocity.y = this.ghost.body.velocity.y - (velocityIncrease * angleRatio);
-				this.ghost.body.velocity.x = this.ghost.body.velocity.x + (velocityIncrease * (1 - angleRatio));
-			}
-		} else { //above
-			if (left) {
-				angleRatio = (Math.abs(angleToBubble) - 1.57079633) / 1.57079633;
-				this.ghost.body.velocity.y = this.ghost.body.velocity.y + (velocityIncrease * (1 - angleRatio));
-				this.ghost.body.velocity.x = this.ghost.body.velocity.x - (velocityIncrease * angleRatio);
-			} else { //Right
-				angleRatio = Math.abs(angleToBubble) / 1.57079633;
-				this.ghost.body.velocity.y = this.ghost.body.velocity.y + (velocityIncrease * angleRatio);
-				this.ghost.body.velocity.x = this.ghost.body.velocity.x + (velocityIncrease * (1 - angleRatio));
-			}
-		}
-
-
+    if(objectHit.sprite.isDoor){
+      BasicGame.updateTimeGame(BasicGame.timerLevel.ms);
+      this.game.state.start('Transition');
+      BasicGame.doorSelected=objectHit.sprite.indexDoor;
+    }
 	},
   moveSprite: function(pointer) {
        console.log("pointer X = " + pointer.x);
        console.log("pointer Y = " + pointer.y);
-
-       //BORDERS OF THE GAME ROOM
-       if(pointer.x < this.game.world.centerX ){
-           this.mouseTargetX = -pointer.x;
-       }else{
-         this.mouseTargetX = pointer.x;
-       }
-
-       if(pointer.y > this.game.world.centerY){
-           this.mouseTargetY = pointer.y;
-       }else {
-           this.mouseTargetY = -pointer.y;
-       }
-       console.log("pointer X = " + this.mouseTargetX);
-       console.log("pointer Y = " + this.mouseTargetY);
-
-       //TODO
-
-       var length = 1000,
-           points = [
-               {x: 0, y: 0},
-               {x: 0, y: length},
-               {x: length, y: 10},
-               {x: -length, y: -10},
-               {x: 0, y: -length},
-               {x: 0, y: 0}
-           ];
-
-       console.log(this.isPointInPoly(points, {x:this.mouseTargetY, y:this.mouseTargetY}));
-
-
-       //this.hero.rotation = this.game.physics.angleToPointer(this.hero, pointer);
+       if(this.paused)return;
+       if(this.isDie)return;
        this.ghost.isWalking = true;
-       /***if(this.ghost.x < this.mouseTargetX) {
-           this.ghost.scale.x = -1;
-       } else {
-           this.ghost.scale.x = 1;
-       }
-**/
-       //  300 = 300 pixels per second = the speed the sprite will move at, regardless of the distance it has to travel
-       var duration = (Phaser.Math.distance(this.ghost.x,this.ghost.y,pointer.x, pointer.y) / 600) * 1000;
+       //  300 = 300 pixels per second =moveSprite the speed the sprite will move at, regardless of the distance it has to travel
+       var duration = (Phaser.Math.distance(this.ghost.x,this.ghost.y,pointer.x, pointer.y) / 800) * 1000;
        this.game.physics.arcade.moveToXY(this.ghost,pointer.x,pointer.y,0,duration);
-       /***this. game.time.events.add(duration*2, function () {
-          this.ghost.body.velocity.x = 0;
-          this.ghost.body.velocity.y = 0;
+      this. game.time.events.add(duration*2.5, function () {
+          this.ghost.isWalking=false;
        }, this);
-**/
       this.finishpoint=pointer;
+      this.ghost.animations.play(this.getAnimationGhost(this.ghost.x,this.ghost.y,pointer));
        //this.tween = this.game.add.tween(this.ghost.body.velocity).to({ x: this.mouseTargetX, y: this.mouseTargetY }, duration, Phaser.Easing.Linear.None, true);
 
    },
+   getAnimationGhost: function(x,y,pointer){
+     let angle = Math.atan2(pointer.y - y, pointer.x - x) * 180 / Math.PI;
+     if(angle>15&&angle<75){return 'right-down'; }
+     if(angle>=165||angle<=-165){ return 'left';}
+     if(angle<15&&angle>-15){ return 'right';}
+     if(angle>105&&angle<=165){ return 'left-down'; }
+     if(angle>=75&&angle<=105){ return 'front';}
+     if(angle>-165&&angle<-105){ return 'left-up';}
+     if(angle<-15&&angle>-75){ return 'right-up';}
+     if(angle<=-75&&angle>=-105){ return 'up';}
+   },
 
   processPointerInput: function(){
-    if (this.game.input.activePointer.isDown) {
-      //this.movePlayer(10);
+    if(this.isDie){
+      if(!(Math.abs(this.ghost.body.velocity.x)>15||Math.abs(this.ghost.body.velocity.y)>15)){
+        this.ghost.body.velocity.x = this.ghost.body.velocity.x*1.05;
+        this.ghost.body.velocity.y = this.ghost.body.velocity.y*1.05;
+      }else{
+        this.ghost.body.velocity.x = this.ghost.body.velocity.x/1.01;
+        this.ghost.body.velocity.y = this.ghost.body.velocity.y/1.01;
+      }
+      return;
     }
-    if(this.ghost.x==this.finishpoint.x&&this.ghost.y==this.finishpoint.y){
-      this.ghost.body.velocity.x = 0;
-      this.ghost.body.velocity.y = 0;
+    if (this.game.input.activePointer.isDown) {
+      if(!(Math.abs(this.ghost.body.velocity.x)>10||Math.abs(this.ghost.body.velocity.y)>10)){
+        this.ghost.body.velocity.x = this.ghost.body.velocity.x*1.05;
+        this.ghost.body.velocity.y = this.ghost.body.velocity.y*1.05;
+      }
+    }
+    if (this.game.input.activePointer.isUp) {
+      this.ghost.body.velocity.x = this.ghost.body.velocity.x/1.05;
+      this.ghost.body.velocity.y = this.ghost.body.velocity.y/1.05;
+    }
+    if(!this.ghost.isWalking){
+      this.ghost.body.velocity.x = this.ghost.body.velocity.x/2;
+      this.ghost.body.velocity.y = this.ghost.body.velocity.y/2;
+    }
+  },
+  createTimerGame: function(){
+    BasicGame.timerLevel =  this.game.time.create(false);
+    BasicGame.timerLevel.loop(Phaser.Timer.SECOND, this.updateTimerLevel, this);
+    BasicGame.timerLevel.start();
+  },
+  updateTimerLevel: function(){
+    if(!navigator.onLine){
+      this.flagConn=false;
+      this.pauseGame();
+      return;
+    }
+    if(BasicGame.timerLevel.ms>BasicGame.timeGameOver){
+      this.timeGameOver();
+      return;
+    }
+    this.flagConn=true;
+    var timeRemaining = (BasicGame.timeGame+BasicGame.timerLevel.ms)/1000;
+    var hours= Math.floor(timeRemaining/3600);
+    timeRemaining=timeRemaining-(hours*3600);
+    var minutes = Math.floor(timeRemaining / 60);
+    var seconds = Math.floor(timeRemaining) - (60 * minutes);
+    var result = (hours<10) ? "0"+hours:hours;
+    result += (minutes < 10) ? ":0" + minutes : ":"+minutes;
+    result += (seconds < 10) ? ":0" + seconds : ":" + seconds;
+    //this.label_time.setText(result);
+  },
+  timeGameOver: function(){
+    this.isDie=true;
+    BasicGame.timerLevel.pause();
+    //BasicGame.setOffsetFromCentre(this.vorticek,0,20);
+    this.destroyCoins();
+    var killGhost = this.game.add.bitmapData(30, 30);
+    killGhost.ctx.beginPath();
+    killGhost.ctx.rect(0, 0, 30, 30);
+    var spriteKillGhost = this.game.add.sprite(this.game.world.centerX-15, this.game.world.centerY-15, killGhost);
+    //spriteBorderBottom.anchor.setTo(0.5, 0.5);
+    this.game.physics.p2.enable(spriteKillGhost,false);
+    spriteKillGhost.body.static=true;
+    spriteKillGhost.body.setCollisionGroup(this.cgCoins);
+    spriteKillGhost.body.collides([this.cgGhost]);
+    this.vorticek.x=this.game.world.centerX-(this.vorticek.width/2);
+    this.vorticek.y=this.game.world.centerY-(this.vorticek.height/2)+20;
+    var vorticekTwn = this.add.tween(this.vorticek).to( { width: this.game.world.width,height:this.game.world.height,x:0,y:20 }, 3000, Phaser.Easing.Linear.None, true, 0, -1, false);
+    //BasicGame.setOffsetFromCentre(this.ghost,0,0);
+    var duration = (Phaser.Math.distance(this.ghost.x,this.ghost.y,this.game.world.centerX, this.game.world.centerY) / 800) * 1000;
+    this.game.physics.arcade.moveToXY(this.ghost,this.game.world.centerX, this.game.world.centerY,0,duration);
+    this.ghost.animations.play('die');
+    this.game.time.events.add(3000, function () {
+      this.ghost.body.setZeroVelocity();
+       BasicGame.gameOver(this);
+    }, this);
+  },
+  destroyCoins: function(){
+    for(let i=0;i<this.coins.length;i++){
+      this.coins[i].reset(-1000,-1000);
+      console.log(this.coins[i]);
     }
   },
 	update: function () {
     this.processPointerInput();
 
 	},
+  createMenuButtons: function(){
+    this.pauseButton=this.game.add.button(this.game.world.width-100,this.game.world.height-100,'playButton',this.pauseGame,this);
+  },
+  createPauseGame: function(){
+    this.paused=false;
+    this.overlay=this.game.add.sprite(-1000,-1000,'overlay');
+    this.unpauseButton=this.game.add.button(-1000,-1000,'playButton',this.unpauseGame,this);
+
+  },
+  pauseGame: function () {
+    this.paused=true;
+    this.game.physics.p2.pause();
+    BasicGame.timerLevel.pause();
+    BasicGame.setOffsetFromCentre(this.overlay,0,0);
+    BasicGame.setOffsetFromCentre(this.unpauseButton,200,100);
+
+  },
+  unpauseGame: function(){
+    this.overlay.cameraOffset.setTo(-1000,-1000);
+    this.unpauseButton.cameraOffset.setTo(-1000,-1000);
+    this.game.physics.p2.resume();
+    BasicGame.timerLevel.resume();
+    this.paused=false;
+  },
 	quitGame: function (pointer) {
 
 		//	Here you should destroy anything you no longer need.
@@ -283,13 +363,5 @@ BasicGame.Game.prototype = {
 
 		//	Then let's go back to the main menu.this.game.time.events.add(3000,function(){
       this.state.start('MainMenu');
-	},
-  isPointInPoly :function(poly, pt){
-        for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
-            ((poly[i].y <= pt.y && pt.y < poly[j].y) || (poly[j].y <= pt.y && pt.y < poly[i].y))
-                && (pt.x < (poly[j].x - poly[i].x) * (pt.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
-            && (c = !c);
-        return c;
-    }
-
+	}
 };
