@@ -26,7 +26,7 @@ BasicGame.Game.prototype = {
     this.game.stage.backgroundColor = '#2d2d2d';
 		this.game.physics.startSystem(Phaser.Physics.P2JS);
     this.game.physics.p2.restitution = 0.1;
-		this.spritebg=this.game.add.sprite(0,0,'floor');
+		this.spritebg=this.game.add.sprite(0,50,'floor');
     this.spritebg.width=this.game.world.width;
     this.spritebg.height=this.game.world.height;
 		console.log("size:"+this.spritebg.width+" - "+this.spritebg.height);
@@ -35,10 +35,12 @@ BasicGame.Game.prototype = {
     this.cgGhost = this.game.physics.p2.createCollisionGroup();
     this.cgCoins = this.game.physics.p2.createCollisionGroup();
     this.cgDoors = this.game.physics.p2.createCollisionGroup();
-    this.isDie=false;
+    BasicGame.isDie=false;
+    this.timeGO=BasicGame.timeGameOver/1000;
+    this.createBarTime();
     this.createDoors();
     this.createCoins();
-    this.vorticek=this.game.add.sprite(-1000,-1000,'vorticek');
+    this.vorticek=this.game.add.sprite(-1000,-1000,'vorticed');
     this.createGhost();
     this.createBorder();
     this.createPauseGame();
@@ -47,17 +49,38 @@ BasicGame.Game.prototype = {
     //this.createStones();
     //this.createBarTop();
 	},
+  createBarTime: function(){
+    let y=-370,scale=0.7;
+    this.barLoad = this.game.add.sprite(0,0,'barLoad');
+    this.barLoad.scale.setTo(scale,scale);
+    BasicGame.setOffsetCentre(this.barLoad,y+6);
+    this.barLoad.width=5;
+    this.barAll = this.game.add.sprite(0,0,'barAll');
+    this.barAll.scale.setTo(scale,scale);
+    BasicGame.setOffsetCentre(this.barAll,y);
+    this.increaseBar=(this.barAll.width-30)/((BasicGame.timeGameOver-1000)/1000);
+    this.label_time = this.game.add.text(20, 0,BasicGame.timeToText(BasicGame.timeGame), BasicGame.styleTime);
+    this.st = this.add.sprite(0, 0);
+    this.st.addChild(this.label_time);
+    BasicGame.setOffsetFromCentre(this.st,-(this.barAll.width/2)-140,y+15);
+    this.label_timeGameOver = this.game.add.text(20, 0,--this.timeGO, BasicGame.styleTime);
+    this.st2 = this.add.sprite(0, 0);
+    this.st2.addChild(this.label_timeGameOver);
+    BasicGame.setOffsetFromCentre(this.st2,(this.barAll.width/2)+10,y+20);
+  },
   createDoors: function(){
-    let scale=0.65;
+    let scale=1.3,y=220;
     BasicGame.doorLost=BasicGame.getRandomInt(1,3);
-    this.door1=this.game.add.sprite(this.game.world.centerX-240,170,'door2');
+    this.door1=this.game.add.sprite(this.game.world.centerX-230,y,'door1');
     this.enablePhysicsDoor(this.door1,1,scale);
-    this.door2=this.game.add.sprite(this.game.world.centerX,170,'door1');
-    this.enablePhysicsDoor(this.door2,2,scale)
-    this.door3=this.game.add.sprite(this.game.world.centerX+210,170,'door2');
+    this.door2=this.game.add.sprite(this.game.world.centerX,y,'door2');
+    this.enablePhysicsDoor(this.door2,2,scale);
+    this.door3=this.game.add.sprite(this.game.world.centerX+230,y,'door3');
     this.enablePhysicsDoor(this.door3,3,scale);
   },
   enablePhysicsDoor(sprite,index,scale){
+    sprite.frame=2;
+    sprite.animations.add('open',[1,0],4,false);
     sprite.scale.setTo(scale,scale);
     sprite.isDoor=true;
     sprite.indexDoor=index;
@@ -169,8 +192,9 @@ BasicGame.Game.prototype = {
     var points=this.getCoinPoints();
     this.coins=[];
     for(var i=0;i<points.length;i++ ){
-      let coin=this.game.add.sprite(points[i].x+50,points[i].y+50,'gift');
-      coin.scale.setTo(0.2,0.2);
+      let coin=this.game.add.sprite(points[i].x+50,points[i].y+50,'coin');
+      coin.frame=1;
+      coin.scale.setTo(1.2,1.2);
       //let coinMon=this.game.add.sprite(points[i].x,points[i].y,'coin');
       coin.isCoin=true;
       this.game.physics.p2.enable(coin,false);
@@ -178,9 +202,11 @@ BasicGame.Game.prototype = {
   		//this.bubble.body.loadPolygon('physdata1', 'donut90-thin');
       coin.body.setCircle(coin.width/2);
       coin.body.static=true;
+      coin.animations.add('rotate',[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],19,true);
       coin.body.setCollisionGroup(this.cgCoins);
       coin.body.collides([this.cgGhost,this.cgCoins]);
       coin.body.onBeginContact.add(this.contactBox,this);
+      coin.animations.play('rotate');
       this.coins.push(coin);
 
     }
@@ -194,8 +220,9 @@ BasicGame.Game.prototype = {
     //this.ghost.body.setZeroVelocity();
   },
   ghostCollision: function(objectHit, shapeA, shapeB, equation) {
-    console.log("colllllision");
-    if(!objectHit){
+    if(!objectHit||BasicGame.isDie){
+      console.log("colllllision");
+      this.body.setZeroVelocity();
       return;
     }
 		if (objectHit.sprite.isCoin) {
@@ -210,16 +237,14 @@ BasicGame.Game.prototype = {
       return;
 		}
     if(objectHit.sprite.isDoor){
-      BasicGame.updateTimeGame(BasicGame.timerLevel.ms);
-      this.game.state.start('Transition');
-      BasicGame.doorSelected=objectHit.sprite.indexDoor;
+      BasicGame.Game.prototype.nextLevel(objectHit,this);
     }
 	},
   moveSprite: function(pointer) {
        console.log("pointer X = " + pointer.x);
        console.log("pointer Y = " + pointer.y);
        if(this.paused)return;
-       if(this.isDie)return;
+       if(BasicGame.isDie)return;
        this.ghost.isWalking = true;
        //  300 = 300 pixels per second =moveSprite the speed the sprite will move at, regardless of the distance it has to travel
        var duration = (Phaser.Math.distance(this.ghost.x,this.ghost.y,pointer.x, pointer.y) / 800) * 1000;
@@ -245,7 +270,7 @@ BasicGame.Game.prototype = {
    },
 
   processPointerInput: function(){
-    if(this.isDie){
+    if(BasicGame.isDie){
       if(!(Math.abs(this.ghost.body.velocity.x)>15||Math.abs(this.ghost.body.velocity.y)>15)){
         this.ghost.body.velocity.x = this.ghost.body.velocity.x*1.05;
         this.ghost.body.velocity.y = this.ghost.body.velocity.y*1.05;
@@ -278,46 +303,45 @@ BasicGame.Game.prototype = {
   updateTimerLevel: function(){
     if(!navigator.onLine){
       this.flagConn=false;
-      this.pauseGame();
-      return;
+      //this.pauseGame();
+      //return;
     }
     if(BasicGame.timerLevel.ms>BasicGame.timeGameOver){
       this.timeGameOver();
       return;
     }
+    this.barLoad.width=this.barLoad.width+this.increaseBar;
     this.flagConn=true;
-    var timeRemaining = (BasicGame.timeGame+BasicGame.timerLevel.ms)/1000;
-    var hours= Math.floor(timeRemaining/3600);
-    timeRemaining=timeRemaining-(hours*3600);
-    var minutes = Math.floor(timeRemaining / 60);
-    var seconds = Math.floor(timeRemaining) - (60 * minutes);
-    var result = (hours<10) ? "0"+hours:hours;
-    result += (minutes < 10) ? ":0" + minutes : ":"+minutes;
-    result += (seconds < 10) ? ":0" + seconds : ":" + seconds;
-    //this.label_time.setText(result);
+    this.label_time.setText(BasicGame.timeToText(BasicGame.timeGame+BasicGame.timerLevel.ms));
+    this.label_timeGameOver.setText(--this.timeGO);
   },
   timeGameOver: function(){
-    this.isDie=true;
+    BasicGame.isDie=true;
     BasicGame.timerLevel.pause();
     //BasicGame.setOffsetFromCentre(this.vorticek,0,20);
     this.destroyCoins();
     var killGhost = this.game.add.bitmapData(30, 30);
     killGhost.ctx.beginPath();
     killGhost.ctx.rect(0, 0, 30, 30);
-    var spriteKillGhost = this.game.add.sprite(this.game.world.centerX-15, this.game.world.centerY-15, killGhost);
+    var spriteKillGhost = this.game.add.sprite(this.game.world.centerX-15, this.game.world.centerY+120, killGhost);
     //spriteBorderBottom.anchor.setTo(0.5, 0.5);
     this.game.physics.p2.enable(spriteKillGhost,false);
     spriteKillGhost.body.static=true;
+    spriteKillGhost.body.restitution=0.1;
     spriteKillGhost.body.setCollisionGroup(this.cgCoins);
     spriteKillGhost.body.collides([this.cgGhost]);
+    this.vorticek.animations.add('play',[0,1,2,3,4,5],6,true);
+    this.vorticek.scale.setTo(4,4);
     this.vorticek.x=this.game.world.centerX-(this.vorticek.width/2);
-    this.vorticek.y=this.game.world.centerY-(this.vorticek.height/2)+20;
-    var vorticekTwn = this.add.tween(this.vorticek).to( { width: this.game.world.width,height:this.game.world.height,x:0,y:20 }, 3000, Phaser.Easing.Linear.None, true, 0, -1, false);
+    this.vorticek.y=this.game.world.centerY-(this.vorticek.height/2)+120;
+    this.vorticek.animations.play('play');
+    //var vorticekTwn = this.add.tween(this.vorticek).to( { width: this.game.world.width,height:this.game.world.height,x:0,y:0 }, 4000, Phaser.Easing.Linear.None, true, 0, -1, false);
     //BasicGame.setOffsetFromCentre(this.ghost,0,0);
     var duration = (Phaser.Math.distance(this.ghost.x,this.ghost.y,this.game.world.centerX, this.game.world.centerY) / 800) * 1000;
-    this.game.physics.arcade.moveToXY(this.ghost,this.game.world.centerX, this.game.world.centerY,0,duration);
+    this.game.physics.arcade.moveToXY(this.ghost,this.game.world.centerX, this.game.world.centerY+120,0,duration);
     this.ghost.animations.play('die');
-    this.game.time.events.add(3000, function () {
+    BasicGame.updateTimeGame(BasicGame.timerLevel.ms);
+    this.game.time.events.add(4000, function () {
       this.ghost.body.setZeroVelocity();
        BasicGame.gameOver(this);
     }, this);
@@ -333,7 +357,13 @@ BasicGame.Game.prototype = {
 
 	},
   createMenuButtons: function(){
-    this.pauseButton=this.game.add.button(this.game.world.width-100,this.game.world.height-100,'playButton',this.pauseGame,this);
+    let varY=20, scale=0.2;
+    this.pauseButton=this.game.add.button(varY,varY,'menuButton',this.pauseGame,this);
+    this.pauseButton.scale.setTo(scale,scale);
+    this.livesButton=this.game.add.button(this.game.world.width-120,varY,'lifesButton',this.pauseGame,this);
+    this.livesButton.scale.setTo(scale,scale);
+    this.coinButton=this.game.add.button(this.game.world.width-120,varY+80,'coinButton',this.pauseGame,this);
+    this.coinButton.scale.setTo(scale,scale);
   },
   createPauseGame: function(){
     this.paused=false;
@@ -355,6 +385,16 @@ BasicGame.Game.prototype = {
     this.game.physics.p2.resume();
     BasicGame.timerLevel.resume();
     this.paused=false;
+  },
+  nextLevel: function(objectHit,that){
+    that.game.physics.p2.pause();
+    BasicGame.timerLevel.pause();
+    BasicGame.updateTimeGame(BasicGame.timerLevel.ms);
+    objectHit.sprite.animations.play('open');
+    that.game.time.events.add(1000, function () {
+        that.game.state.start('Transition');
+     }, that);
+    BasicGame.doorSelected=objectHit.sprite.indexDoor;
   },
 	quitGame: function (pointer) {
 

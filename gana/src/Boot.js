@@ -10,9 +10,10 @@ BasicGame = {
     orientated: false,
     lives:40,
     level:0,
+    isDie:false,
     timeGame:0,
     timerLevel:null,
-    timeGameOver:15000,
+    timeGameOver:12000,
     idUser:null,
     doorSelected:-1,
     doorLost:-1,
@@ -24,7 +25,8 @@ BasicGame = {
     minCoinY:250,
     maxCoinY:700,
     hostApi:'http://localhost',
-    urlApi:'api/person/gamer_score/'
+    urlApi:'api/person/gamer_score/',
+    styleTime : { font: "25px Georgia Bold Italic", fill: "#ffffff" ,align: "center"}
 };
 
 BasicGame.Boot = function (game) {

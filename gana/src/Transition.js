@@ -21,6 +21,7 @@ BasicGame.Transition.prototype={
   create: function(){
     this.game.stage.backgroundColor = '#2d2d2d';
 		this.game.physics.startSystem(Phaser.Physics.P2JS);
+    this.game.physics.p2.resume();
     this.cgVortices = this.game.physics.p2.createCollisionGroup();
     this.cgGhost = this.game.physics.p2.createCollisionGroup();
     this.createVortices();

@@ -32,17 +32,30 @@ BasicGame.Preloader.prototype = {
 		this.load.image('bgScore','images/bg_score_lives.png');
 		this.load.image('adsLogo','images/Logo_Munanqui.jpg');
 		this.load.audio('titleMusic', ['audio/portalwin.mp3']);
-		this.load.image('playButton','images/play_start.png');
-		this.load.spritesheet('ghost','images/Personaje/sprites/ghost2.png',86.66,142.50);
+		this.load.image('playButton','images/Escenario/btn_play.png');
+		this.load.image('menuButton','images/Escenario/btn_menu.png');
+		this.load.image('coinButton','images/Escenario/btn_coins.png');
+		this.load.image('jugarButton','images/Escenario/btn_jugar.png');
+		this.load.image('intentosButton','images/Escenario/btn_mas_intentos.png');
+		this.load.image('salirButton','images/Escenario/btn_salir.png');
+
+		this.load.image('lifesButton','images/Escenario/btn_lifesicon.png');
+		this.load.spritesheet('ghost','images/Personaje/ghost2.png',86.66,142.50);
 		this.load.image('floor','images/Escenario/base_stage.png');
 		this.load.image('floor2','images/Escenario/base_stage2.png');
-		this.load.image('coin','images/Escenario/coin0.png');
-		this.load.image('door1','images/Escenario/door1.png');
-		this.load.image('door2','images/Escenario/doorb1.png');
+		this.load.spritesheet('coin','images/Escenario/coinSprite.png',86.68,127);
+		this.load.spritesheet('door1','images/Escenario/doorSprite1.png',260,144);
+		this.load.spritesheet('door2','images/Escenario/doorSprite2.png',260,145);
+		this.load.spritesheet('door3','images/Escenario/doorSprite3.png',260,137);
+		this.load.spritesheet('vorticed','images/Escenario/vortice_die.png',260,153);
 		this.load.image('vorticew','images/Escenario/vorticew.png');
 		this.load.image('vorticek','images/Escenario/vorticek.png');
 		this.load.image('gift','images/Escenario/gift.png');
 		this.load.image('overlay','images/overlay.png');
+		this.load.image('loadScreen','images/Escenario/loadScreen.jpg');
+		this.load.image('pauseScreen','images/Escenario/pauseScreen.jpg');
+		this.load.image('barAll','images/Escenario/bar_1.png');
+		this.load.image('barLoad','images/Escenario/bar_2.png');
 		//	+ lots of other required assets here
 
 	},

@@ -35,6 +35,7 @@ BasicGame.incrementScore=function(increment){
 };
 BasicGame.updateTimeGame=function(timeUpdate){
 	this.timeGame+=timeUpdate;
+	console.log("timeGame:"+this.timeGame);
 }
 BasicGame.gameOver=function(that){
 	this.lives--;
@@ -108,7 +109,6 @@ BasicGame.sendGamerScoreApi=function(timeGame){
   //var timeGame=this.timerPlayer.ms;
   var arc=((Math.PI/2)-Math.atan(timeGame/100000));
   var puntaje=arc*0.63661977236+this.score;
-  console.log("timeGame:"+timeGame);
   console.log("score:"+puntaje);
   var params={
     challenge:this.idReto,
@@ -118,4 +118,15 @@ BasicGame.sendGamerScoreApi=function(timeGame){
     console.log(jsonResp);
   }
   this.makeApiRequest(this.urlApi,params,'POST',callbackScore);
+};
+BasicGame.timeToText=function(time){
+	let timeRemaining = time/1000;
+	var hours= Math.floor(timeRemaining/3600);
+	timeRemaining=timeRemaining-(hours*3600);
+	var minutes = Math.floor(timeRemaining / 60);
+	var seconds = Math.floor(timeRemaining) - (60 * minutes);
+	var result = (hours<10) ? "0"+hours:hours;
+	result += (minutes < 10) ? ":0" + minutes : ":"+minutes;
+	result += (seconds < 10) ? ":0" + seconds : ":" + seconds;
+	return result;
 };
